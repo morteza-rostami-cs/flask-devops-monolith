@@ -3,3 +3,4 @@ environs
 python-dotenv
 psycopg[binary]
 psycopg-pool
+redis

@@ -1,5 +1,5 @@
 from flask import Flask, request
-from api.src.validate import ValidationError
+from shared.validate import ValidationError
 
 # from typing import Any
 from shared.database import GetDb

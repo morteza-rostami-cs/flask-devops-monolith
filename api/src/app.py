@@ -1,13 +1,16 @@
 from flask import Flask
 from shared.settings import Settings
 import atexit  # for shutdown events
-from api.src.validate import ValidationError
+from shared.validate import ValidationError
 
 # routes
 from api.src.modules.users import register_users_routes
 
 # db connection
 from shared.database import get_pool, pool
+
+# redis
+from shared.redis import redis_client
 
 
 # app start up
@@ -36,6 +39,22 @@ def create_app():
             conn.execute("select 1")
 
         return dict(status="ok")
+
+    # redis health
+    @app.get("/health/redis")
+    def health_redis():
+        redis_client.ping()
+
+        return {"status": "ok"}
+
+    # redis test
+    @app.get("/redis/test")
+    def redis_test():
+        redis_client.set("devops:test", "hello redis")
+
+        value = redis_client.get("devops:test")
+
+        return dict(value=value)
 
     # register routes
     register_users_routes(app, get_db=get_pool)
