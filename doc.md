@@ -13,9 +13,26 @@ flask --app api.src.app run --debug
 
 tree -a -I ".venv|.git"
 
+## postgres setup=========================
 
+sudo -u postgres psql
 
+# list databases
+\l
 
+# list users
+\du
 
+# connect to a db
+\c database_name
+
+# show tables
+\dt
+
+# show which db we are connected to
+\conninfo
+
+# exit
+\q
 
 ```
