@@ -1,6 +1,7 @@
 from flask import Flask
 from shared.settings import Settings
 import atexit  # for shutdown events
+from api.src.validate import ValidationError
 
 # routes
 from api.src.modules.users import register_users_routes
@@ -14,6 +15,11 @@ def create_app():
     app = Flask(__name__)
     # setup .env variables
     app.config.from_object(Settings)
+
+    # basic error handle
+    @app.errorhandler(ValidationError)
+    def handle_validation_error(e: ValidationError):
+        return {"error": str(e)}, e.status
 
     @app.get("/health")
     def health():
