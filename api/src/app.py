@@ -32,7 +32,7 @@ def create_app():
         return dict(status="ok")
 
     # register routes
-    register_users_routes(app)
+    register_users_routes(app, get_db=get_pool)
 
     # shutdown handler
     def shutdown():

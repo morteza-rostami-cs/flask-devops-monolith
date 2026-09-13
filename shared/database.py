@@ -1,9 +1,13 @@
 import psycopg
 from psycopg_pool import ConnectionPool
 from shared.settings import settings
+from collections.abc import Callable
 
 # init the db connection pool once
-pool = ConnectionPool(settings.DATABASE_URL)
+pool: ConnectionPool = ConnectionPool(settings.DATABASE_URL)
+
+type DBPool = ConnectionPool
+type GetDb = Callable[[], DBPool]
 
 
 # get connection pool

@@ -6,3 +6,6 @@ run:
 
 tree:
 	tree -a -I ".venv|.git"
+
+migrate:
+	python -m shared.migrations
