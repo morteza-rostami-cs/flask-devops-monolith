@@ -1,13 +1,14 @@
 from flask import Flask, request
 from shared.validate import ValidationError
 
+import json  # store json in redis
+from shared.redis import redis_client
+
+USERS_CACHE_KEY = "users:list"  # key_name for storing users in redis
+USERS_CACHE_TTL = 30  # expires in 30 sec
+
 # from typing import Any
 from shared.database import GetDb
-
-# bad request input
-# def bad_request(message: str):
-#     return dict(error=message), 400
-
 
 type ValidatedUser = dict[str, str]
 
@@ -45,6 +46,14 @@ def register_users_routes(app: Flask, get_db: GetDb):
     @app.get("/users")
     def find_all():
 
+        # first: try getting cached users
+        cached = redis_client.get(USERS_CACHE_KEY)
+
+        # if cache exists - return it
+        if cached:
+            return json.loads(cached)
+
+        # if not in cache -- fetch from postgres
         with get_db().connection() as conn:
             rows = conn.execute("""
                 select id, username, email
@@ -52,7 +61,7 @@ def register_users_routes(app: Flask, get_db: GetDb):
                 order by id
             """).fetchall()
 
-        return [
+        users = [
             {
                 "id": row[0],
                 "username": row[1],
@@ -60,6 +69,16 @@ def register_users_routes(app: Flask, get_db: GetDb):
             }
             for row in rows
         ]
+
+        # cache users in redis
+        # so each time gets expired or invalidated -- we cache it in next request (here)
+        redis_client.set(
+            USERS_CACHE_KEY,  # name
+            json.dumps(users),  # cache users as json
+            ex=USERS_CACHE_TTL,
+        )
+
+        return users
 
     # GET /users/:id
     @app.get("/users/<int:id>")
@@ -103,8 +122,11 @@ def register_users_routes(app: Flask, get_db: GetDb):
                 ).fetchone()
         except Exception:
             return dict(error="failed to create user"), 500
+
         if row is None:
             return dict(error="user was not created"), 500
+
+        redis_client.delete(USERS_CACHE_KEY)  # invalidate cache
 
         return {
             "id": row[0],
@@ -142,6 +164,8 @@ def register_users_routes(app: Flask, get_db: GetDb):
         if row is None:
             return {"error": "user not found"}, 404
 
+        redis_client.delete(USERS_CACHE_KEY)  # invalidate cache
+
         return {
             "id": row[0],
             "username": row[1],
@@ -167,5 +191,7 @@ def register_users_routes(app: Flask, get_db: GetDb):
 
         if row is None:
             return {"error": "user not found"}, 404
+
+        redis_client.delete(USERS_CACHE_KEY)  # invalidate cache
 
         return {"message": "user deleted"}
