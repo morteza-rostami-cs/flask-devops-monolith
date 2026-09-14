@@ -47,15 +47,6 @@ def create_app():
 
         return {"status": "ok"}
 
-    # redis test
-    @app.get("/redis/test")
-    def redis_test():
-        redis_client.set("devops:test", "hello redis")
-
-        value = redis_client.get("devops:test")
-
-        return dict(value=value)
-
     # register routes
     register_users_routes(app, get_db=get_pool)
 
